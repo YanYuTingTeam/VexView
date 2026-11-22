@@ -172,7 +172,7 @@ public class VexInventoryGui extends GuiInventory {
       NetPacketManager.m4(new PacketInventory("", "close"));
    }
 
-   protected void actionPerformed(GuiButton var1) {
+   protected void actionPerformed(GuiButton var1) throws IOException {
       if (var1.id == 10) {
          super.actionPerformed(var1);
          this.buttonList.clear();

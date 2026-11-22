@@ -40,3 +40,10 @@ plugin-src/
 # 反编译残留
 summary.txt
 
+
+# gradle
+.gradle/
+run/
+gradle-dist/
+.gradle-dist/
+

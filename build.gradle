@@ -1,0 +1,42 @@
+// ForgeGradle 2.1 构建（可选路径）
+//
+//   $env:JAVA_HOME = '<JDK 8>'          # 必须是 JDK，不能是 JRE（FG 需要 tools.jar）
+//   gradle build                        # -> build/libs/vexview-2.7.3-1.8.9.jar
+//
+// 说明：ForgeGradle 2.3 起显式拒绝 1.8.9（MIN: 1.12），所以这里锁 2.1-SNAPSHOT。
+// 不想装 Gradle / 不想联网时，用仓库自带的离线流水线 build-local.ps1，产出一致。
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.1-SNAPSHOT'
+    }
+}
+apply plugin: 'net.minecraftforge.gradle.forge'
+
+version = "2.7.3-1.8.9"
+group = "lk.vexview"
+archivesBaseName = "vexview"
+
+sourceCompatibility = targetCompatibility = '1.8'
+
+minecraft {
+    version = "1.8.9-11.15.1.2318-1.8.9"
+    mappings = "stable_22"
+    runDir = "run"
+    makeObfSourceJar = false
+}
+
+dependencies {
+    // VexView 只需要 Forge + Minecraft，不额外依赖任何库
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+processResources {
+    inputs.property "version", project.version
+}

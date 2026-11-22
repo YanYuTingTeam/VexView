@@ -103,23 +103,38 @@
 
 ## 构建
 
-仓库自带完整工具链，**不需要 ForgeGradle**。要求：
+两条路都能出同一个 jar，按你机器上有什么选就行。
 
-* JDK **8**（`-JavaHome` 可显式指定，默认自动探测常见安装路径）
-* 本机装过 **1.8.9**（或 1.8.9-Forge）—— 工具链会从 `.minecraft` 里取客户端 jar 和运行库
-* 首次构建需要联网下载约 **4.5 MB** 的映射/AT 文件（mcp 的 `joined.srg`、`mcp_stable-22`、Forge `merged_at.cfg`），之后完全离线
+### A. 离线脚本（不装 Gradle、不配 Gradle 仓库）
 
 ```powershell
 pwsh -File .\build-local.ps1
-# 第一次会自动调用 build-tools\prepare-sdk.ps1 生成工具链，然后：
 # -> build\libs\vexview-2.7.3-1.8.9.jar
 ```
 
-`build-tools/prepare-sdk.ps1` 也可以单独运行（`-MinecraftDir <路径>` 指定别的 `.minecraft`，
-`-Force` 强制重建），它做四件事：下载映射 → 用本机客户端 jar + Forge binpatch 生成 **MCP 命名空间的编译 SDK** →
-生成 MCP→SRG 映射表 → 按本机库列表写 `cp.txt`。
+要求：JDK 8；本机装过 1.8.9（或 1.8.9-Forge）——工具链要从 `.minecraft` 取客户端 jar 和运行库；
+首次运行联网下载约 4.5 MB 映射/AT 文件，之后完全离线。
+
+第一次会自动调用 `build-tools/prepare-sdk.ps1`：下载 `joined.srg` / `mcp_stable-22` / `merged_at.cfg` →
+用本机客户端 jar + Forge binpatch 生成 **MCP 命名空间的编译 SDK** → 生成 MCP→SRG 映射表 → 写 `cp.txt`。
+它也可以单独跑（`-MinecraftDir <路径>`、`-Force` 重建）。
 
 流水线：`javac 1.8` → **MCP 成员名重写成 SRG**（Forge 1.8.9 运行期用的就是 SRG 名）→ 打包资源。
+
+### B. ForgeGradle（标准 Gradle 工程，给要写代码/跑调试的人）
+
+```powershell
+$env:JAVA_HOME = '<JDK 8 的路径>'   # 必须是 JDK，不能是 JRE
+gradle build                        # -> build\libs\vexview-2.7.3-1.8.9.jar
+```
+
+* **必须用 ForgeGradle 2.1**：2.3 起会在配置阶段直接拒绝 1.8.9（`MIN: 1.12`），所以 `build.gradle` 里锁的是
+  `net.minecraftforge.gradle:ForgeGradle:2.1-SNAPSHOT`；
+* Gradle 版本用的是 **4.10.3**（JDK 8 环境下的稳定组合）；
+* 首次会下载 MC/Forge 并反混淆（约 3–4 分钟），之后增量构建 30 秒左右。
+
+> 两条路的产物等价（168 个 class、SRG 成员名、同样的 assets）。仓库里的离线流水线是给“没有 Gradle / 不想配环境”的场景准备的，
+> 两者都经过实机验证。
 
 `build-tools/` 里是自建的三件套（源码可读，可复用）：
 
