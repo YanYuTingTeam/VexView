@@ -66,7 +66,7 @@
 **客户端**
 
 1. 安装 Minecraft **1.8.9** + **Forge 11.15.1.1902**（或同版本段的 1.8.9 Forge）。
-2. 从 [Releases](../../releases) 下载 `vexview-2.7.3-1.8.9.jar`（或按[构建](#构建)自行编译），放进 `.minecraft/mods/`。
+2. 取 `vexview-2.7.3-1.8.9.jar`（[Releases](../../releases) 里下载，或按[构建](#构建)自行编译），放进 `.minecraft/mods/`。
 3. 启动游戏，模组会自己生成 `config/vexview.cfg`（与原版同结构，可直接沿用 1.12.2 的配置）。
 
 **服务端**
