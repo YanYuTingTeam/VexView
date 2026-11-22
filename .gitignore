@@ -1,0 +1,42 @@
+# ---- build output -------------------------------------------------------------
+build/
+out/
+*.class
+*.log
+*.jar
+!build-tools/lib/*.jar
+
+# ---- generated toolchain (rebuild with build-tools/prepare-sdk.ps1) -----------
+build-tools/dl/
+build-tools/work/
+build-tools/out/
+build-tools/minecraft-1.8.9-forge-mcp.jar
+build-tools/mcp2srg-1.8.9.map
+build-tools/cp.txt
+build-tools/sources.txt
+build-tools/api189.txt
+
+# ---- verification probe / run dir ---------------------------------------------
+probe/classes/
+probe/stage/vexprobe/
+probe/probe-srg.jar
+runtest/
+
+# ---- IDE / OS ------------------------------------------------------------------
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+bin/
+Thumbs.db
+desktop.ini
+
+# 反编译的官方服务端插件源码（不公开）
+plugin-src/
+
+
+# 反编译残留
+summary.txt
+

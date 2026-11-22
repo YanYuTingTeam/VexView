@@ -1,0 +1,10 @@
+[
+{
+  "modid": "vexprobe",
+  "name": "VexView Port Probe",
+  "description": "verification probe (not shipped)",
+  "version": "1.0",
+  "mcversion": "1.8.9",
+  "authorList": ["port-verification"]
+}
+]
