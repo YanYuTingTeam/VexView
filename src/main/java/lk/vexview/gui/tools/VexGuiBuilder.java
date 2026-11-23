@@ -21,6 +21,7 @@ import lk.vexview.net.packet.PacketGuiOpen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.network.NetHandlerPlayClient;
+import net.minecraft.network.NetworkManager;
 import org.json.JSONObject;
 
 public class VexGuiBuilder {
@@ -29,6 +30,11 @@ public class VexGuiBuilder {
     public static void m3(String string) {
         Minecraft minecraft = Minecraft.getMinecraft();
         NetHandlerPlayClient connection = minecraft.getNetHandler();
+        NetworkManager source = VexView.imageConnection();
+        // A delayed packet from an old connection must not invalidate a newer GUI request.
+        if (source == null || connection == null || connection.getNetworkManager() != source || !source.isChannelOpen()) {
+            return;
+        }
         long request = guiRequests.incrementAndGet();
         VexView.m1(() -> {
             JSONObject payload = new JSONObject(string);
@@ -39,7 +45,8 @@ public class VexGuiBuilder {
             String inventory = payload.has("inventory") ? payload.getString("inventory") : null;
             minecraft.addScheduledTask(() -> {
                 // A later GUI request or a new connection can supersede this worker.
-                if (request == guiRequests.get() && connection != null && minecraft.getNetHandler() == connection) {
+                if (request == guiRequests.get() && connection != null && minecraft.getNetHandler() == connection
+                        && VexView.isImageConnectionCurrent(source)) {
                     m6(minecraft, components, scrollingList, inventory);
                 }
             });

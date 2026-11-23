@@ -3,13 +3,6 @@
  */
 package lk.vexview.tag.core;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import javax.imageio.ImageIO;
-import lk.vexview.VexConfig;
 import lk.vexview.VexView;
 import lk.vexview.engine.BufferImageLib;
 import lk.vexview.net.NetPacketManager;
@@ -34,38 +27,18 @@ extends VexTag {
 
     @Override
     public void m1() {
+        net.minecraft.network.NetworkManager owner = VexView.imageConnection();
         VexView.m2(() -> {
-            block6: {
-                FileInputStream fileInputStream;
-                try {
-                    if (BufferImageLib.s4.containsKey(this.f3)) return true;
-                }
-                catch (Exception exception) {
-                    return false;
-                }
-                if (!this.f3.contains("[local]")) break block6;
-                File file = new File(VexConfig.s1, this.f3.replace("[local]", ""));
-                FileInputStream fileInputStream2 = fileInputStream = new FileInputStream(file);
-                BufferImageLib.m8(this.f3, ImageIO.read(fileInputStream2));
-                ((InputStream)fileInputStream2).close();
-                return true;
-            }
             try {
-                InputStream inputStream;
-                HttpURLConnection httpURLConnection;
-                URL uRL = new URL(this.f3);
-                HttpURLConnection httpURLConnection2 = httpURLConnection = (HttpURLConnection)uRL.openConnection();
-                httpURLConnection2.setRequestMethod("GET");
-                httpURLConnection2.setConnectTimeout(3000);
-                InputStream inputStream2 = inputStream = httpURLConnection2.getInputStream();
-                BufferImageLib.m8(this.f3, ImageIO.read(inputStream2));
-                inputStream2.close();
+                if (BufferImageLib.s4.containsKey(this.f3)) return true;
+                java.awt.image.BufferedImage image = BufferImageLib.readImage(this.f3, lk.vexview.engine.ImageReadLimits::read);
+                if (image == null) throw new java.io.IOException("Unsupported image format");
+                BufferImageLib.storeImageForConnection(this.f3, image, owner);
                 return true;
+            } catch (Exception exception) {
+                if (!this.f3.contains("[local]")) VexView.onImageConnection(owner, () -> NetPacketManager.m4(new PacketDownload("IMAGE")));
+                return false;
             }
-            catch (Exception exception) {
-                NetPacketManager.m4(new PacketDownload("IMAGE"));
-            }
-            return true;
         });
     }
 

@@ -26,6 +26,8 @@ public final class Base64ImagePacketsTest {
         new Base64ImagePacketsTest().keepsPairsOrderedAndChannelsIndependent();
         new Base64ImagePacketsTest().recoversFromMalformedPairsAndWorkerRejection();
         new Base64ImagePacketsTest().dropsOldPendingImagesAndQueuedUploads();
+        new Base64ImagePacketsTest().rejectsOversizedInputAndRecovers();
+        new Base64ImagePacketsTest().boundsPendingImagesAndDecodedUploads();
         System.out.println("Base64 image transfer checks passed");
     }
 
@@ -45,7 +47,64 @@ public final class Base64ImagePacketsTest {
         drain(worker);
         require(uploaded.isEmpty(), "decode must only queue uploads");
         drain(client);
+        drain(worker);
+        drain(client);
         expect("gui/first/" + FIRST, "hud/other/" + SECOND, "gui/second/" + SECOND);
+    }
+
+    private void rejectsOversizedInputAndRecovers() throws IOException {
+        Base64ImagePackets<Object> gui = channel("gui");
+        gui.receive(active, "{\"id\":\"" + repeat('a', 65536) + "\"}");
+        gui.receive(active, image(FIRST));
+        gui.receive(active, header("oversized-payload"));
+        gui.receive(active, repeat('A', 4 * ((8 * 1024 * 1024 + 2) / 3) + 1));
+        gui.receive(active, header("oversized-dimensions"));
+        gui.receive(active, image(4097, 1));
+        gui.receive(active, header("packet-rejected-before-conversion"));
+        gui.rejectPacket(active);
+        gui.receive(active, image(FIRST));
+        gui.receive(active, header("recovered"));
+        gui.receive(active, image(SECOND));
+        drain(worker);
+        drain(client);
+        expect("gui/recovered/" + SECOND);
+    }
+
+    private void boundsPendingImagesAndDecodedUploads() throws IOException {
+        Base64ImagePackets<Object> gui = channel("gui");
+        String payload = image(FIRST);
+        for (int i = 0; i < 20; ++i) {
+            gui.receive(active, header("queued-" + i));
+            gui.receive(active, payload);
+        }
+        require(worker.size() == 1, "only one decode should be scheduled");
+        drain(worker);
+        require(client.size() == 1, "only one decoded image may await upload");
+        require(worker.isEmpty(), "next decode must wait for upload");
+        while (!client.isEmpty() || !worker.isEmpty()) {
+            drain(client);
+            drain(worker);
+        }
+        require(uploaded.size() == 16, "pending image queue must be bounded: " + uploaded.size());
+        require(uploaded.get(15).equals("gui/queued-15/" + FIRST), "queue must retain order");
+        gui.receive(active, header("after-full"));
+        gui.receive(active, payload);
+        drain(worker);
+        drain(client);
+        require(uploaded.get(16).equals("gui/after-full/" + FIRST), "queue must recover after overload");
+    }
+
+    private static String repeat(char c, int length) {
+        char[] chars = new char[length];
+        Arrays.fill(chars, c);
+        return new String(chars);
+    }
+
+    private static String image(int width, int height) throws IOException {
+        BufferedImage pixels = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        if (!ImageIO.write(pixels, "png", output)) throw new IOException("No PNG writer");
+        return Base64.getEncoder().encodeToString(output.toByteArray());
     }
 
     private void recoversFromMalformedPairsAndWorkerRejection() throws IOException {

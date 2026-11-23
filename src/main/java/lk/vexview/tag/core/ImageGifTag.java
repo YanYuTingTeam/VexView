@@ -4,13 +4,7 @@
 package lk.vexview.tag.core;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
-import lk.vexview.VexConfig;
 import lk.vexview.VexView;
 import lk.vexview.engine.BufferImageLib;
 import lk.vexview.gui.core.GifDecoder;
@@ -80,64 +74,26 @@ extends VexTag {
 
     @Override
     public void m1() {
+        net.minecraft.network.NetworkManager owner = VexView.imageConnection();
         VexView.m2(() -> {
             try {
-                HttpURLConnection httpURLConnection;
-                if (BufferImageLib.s2.containsKey(this.f6)) {
-                    return true;
-                }
-                if (this.f6.contains("[local]")) {
-                    File file = new File(VexConfig.s1, this.f6.replace("[local]", ""));
-                    FileInputStream fileInputStream = new FileInputStream(file);
-                    GifDecoder gifDecoder = new GifDecoder();
-                    gifDecoder.m12(fileInputStream);
-                    int n = gifDecoder.m21();
-                    if (this.f4 == 0) {
-                        this.f4 = gifDecoder.f1;
+                if (BufferImageLib.s2.containsKey(this.f6)) return true;
+                GifDecoder decoder = BufferImageLib.readImage(this.f6, input -> {
+                    GifDecoder result = new GifDecoder();
+                    if (result.m12(input) != GifDecoder.s3 || result.m21() == 0) {
+                        throw new java.io.IOException("Invalid or oversized GIF");
                     }
-                    ImageGifTag imageGifTag = this;
-                    VexGifImage.s1.put(imageGifTag.f6, imageGifTag.f4);
-                    ArrayList<BufferedImage> arrayList = new ArrayList<BufferedImage>();
-                    int n2 = 0;
-                    int n3 = n2;
-                    while (n3 < n) {
-                        BufferedImage bufferedImage = gifDecoder.m9(n2);
-                        arrayList.add(bufferedImage);
-                        n3 = ++n2;
-                    }
-                    BufferImageLib.m13(this.f6, arrayList);
-                    ((InputStream)fileInputStream).close();
-                    return true;
-                }
-                GifDecoder gifDecoder = new GifDecoder();
-                URL uRL = new URL(this.f6);
-                HttpURLConnection httpURLConnection2 = httpURLConnection = (HttpURLConnection)uRL.openConnection();
-                httpURLConnection2.setRequestMethod("GET");
-                httpURLConnection2.setConnectTimeout(3000);
-                InputStream inputStream = httpURLConnection2.getInputStream();
-                gifDecoder.m12(inputStream);
-                int n = gifDecoder.m21();
-                if (this.f4 == 0) {
-                    this.f4 = gifDecoder.f1;
-                }
-                ImageGifTag imageGifTag = this;
-                VexGifImage.s1.put(imageGifTag.f6, imageGifTag.f4);
-                ArrayList<BufferedImage> arrayList = new ArrayList<BufferedImage>();
-                int n4 = 0;
-                int n5 = n4;
-                while (true) {
-                    if (n5 >= n) {
-                        BufferImageLib.m13(this.f6, arrayList);
-                        inputStream.close();
-                        return true;
-                    }
-                    BufferedImage bufferedImage = gifDecoder.m9(n4);
-                    arrayList.add(bufferedImage);
-                    n5 = ++n4;
-                }
-            }
-            catch (Exception exception) {
-                NetPacketManager.m4(new PacketDownload("GIFIMAGE"));
+                    return result;
+                });
+                ArrayList<BufferedImage> frames = new ArrayList<BufferedImage>();
+                for (int frame = 0; frame < decoder.m21(); frame++) frames.add(decoder.m9(frame));
+                BufferImageLib.storeGifForConnection(this.f6, frames, owner, () -> {
+                    if (this.f4 == 0) this.f4 = decoder.f1;
+                    VexGifImage.s1.put(this.f6, this.f4);
+                });
+                return true;
+            } catch (Exception exception) {
+                VexView.onImageConnection(owner, () -> NetPacketManager.m4(new PacketDownload("GIFIMAGE")));
                 return false;
             }
         });

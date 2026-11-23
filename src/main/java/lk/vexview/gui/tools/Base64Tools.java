@@ -34,6 +34,10 @@ public class Base64Tools {
                 && ((NetHandlerPlayClient) event.handler).getNetworkManager() == event.manager
                 && event.manager.isChannelOpen()) {
             ByteBuf payload = event.packet.payload();
+            if (payload.readableBytes() > Base64ImagePackets.MAX_PACKET_BYTES) {
+                IMAGES.rejectPacket(event.manager);
+                return;
+            }
             String text = payload.toString(payload.readerIndex(), payload.readableBytes(), StandardCharsets.UTF_8);
             IMAGES.receive(event.manager, text.replace("<Base64_image>", ""));
         }

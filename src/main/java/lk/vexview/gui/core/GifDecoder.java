@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import lk.vexview.engine.ImageReadLimits;
 
 public class GifDecoder {
    public int f1;
@@ -332,6 +333,14 @@ public class GifDecoder {
       this.f15 = this.m6();
       this.f11 = this.m6();
       this.f2 = this.m6();
+      // Each GIF frame produces a full canvas texture. Bound both the frame
+      // rectangle and the cumulative decoded canvas before allocating either.
+      if (!ImageReadLimits.validDimensions(this.f11, this.f2)
+            || this.f25 >= 256
+            || (long) this.f34 * this.f12 * (this.f25 + 1L) > 67108864L) {
+         this.f33 = 1;
+         return;
+      }
       int var2;
       this.f24 = ((var2 = this.m7()) & 128) != 0;
       this.f31 = (var2 & 64) != 0;
@@ -385,6 +394,10 @@ public class GifDecoder {
    protected void m10() {
       this.f34 = this.m6();
       this.f12 = this.m6();
+      if (!ImageReadLimits.validDimensions(this.f34, this.f12)) {
+         this.f33 = 1;
+         return;
+      }
       int var2;
       this.f29 = ((var2 = this.m7()) & 128) != 0;
       this.f37 = 2 << (var2 & 7);

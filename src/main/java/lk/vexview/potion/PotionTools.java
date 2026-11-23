@@ -3,17 +3,10 @@
  */
 package lk.vexview.potion;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.imageio.ImageIO;
-import lk.vexview.VexConfig;
 import lk.vexview.VexView;
 import lk.vexview.engine.BufferImageLib;
 import lk.vexview.potion.CustomPotion;
@@ -59,31 +52,12 @@ public class PotionTools {
     }
 
     public static void m1(String string) {
+        net.minecraft.network.NetworkManager owner = VexView.imageConnection();
         VexView.m2(() -> {
-            InputStream inputStream;
-            HttpURLConnection httpURLConnection;
-            block4: {
-                FileInputStream fileInputStream;
-                try {
-                    if (BufferImageLib.s4.containsKey(string)) return true;
-                }
-                catch (Exception exception) {
-                    return false;
-                }
-                if (!string.contains("[local]")) break block4;
-                File file = new File(VexConfig.s1, string.replace("[local]", ""));
-                FileInputStream fileInputStream2 = fileInputStream = new FileInputStream(file);
-                BufferImageLib.m8(string, ImageIO.read(fileInputStream2));
-                ((InputStream)fileInputStream2).close();
-                return true;
-            }
-            URL uRL = new URL(string);
-            HttpURLConnection httpURLConnection2 = httpURLConnection = (HttpURLConnection)uRL.openConnection();
-            httpURLConnection2.setRequestMethod("GET");
-            httpURLConnection2.setConnectTimeout(3000);
-            InputStream inputStream2 = inputStream = httpURLConnection2.getInputStream();
-            BufferImageLib.m8(string, ImageIO.read(inputStream2));
-            inputStream2.close();
+            if (BufferImageLib.s4.containsKey(string)) return true;
+            java.awt.image.BufferedImage image = BufferImageLib.readImage(string, lk.vexview.engine.ImageReadLimits::read);
+            if (image == null) return false;
+            BufferImageLib.storeImageForConnection(string, image, owner);
             return true;
         });
     }

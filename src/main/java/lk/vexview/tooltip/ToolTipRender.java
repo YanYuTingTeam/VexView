@@ -3,13 +3,8 @@
  */
 package lk.vexview.tooltip;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
-import javax.imageio.ImageIO;
-import lk.vexview.VexConfig;
 import lk.vexview.VexView;
 import lk.vexview.engine.BufferImageLib;
 import net.minecraft.client.Minecraft;
@@ -118,14 +113,13 @@ public class ToolTipRender {
                 if (!list.contains(string)) {
                     final int tooltipX = n;
                     final int tooltipY = n2;
+                    final net.minecraft.network.NetworkManager owner = VexView.imageConnection();
                     VexView.m1(() -> {
                         if (string.contains("[local]")) {
                             try {
-                                FileInputStream fileInputStream;
-                                File file = new File(VexConfig.s1, string.replace("[local]", ""));
-                                FileInputStream fileInputStream2 = fileInputStream = new FileInputStream(file);
-                                BufferImageLib.m8(string, ImageIO.read(fileInputStream2));
-                                ((InputStream)fileInputStream2).close();
+                                java.awt.image.BufferedImage image = BufferImageLib.readImage(string, lk.vexview.engine.ImageReadLimits::read);
+                                if (image == null) throw new java.io.IOException("Unsupported image format");
+                                BufferImageLib.storeImageForConnection(string, image, owner);
                                 return;
                             }
                             catch (Exception exception) {
