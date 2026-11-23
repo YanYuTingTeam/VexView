@@ -106,36 +106,25 @@ public class VexView {
     @Mod.EventHandler
     public void preload(FMLPreInitializationEvent fMLPreInitializationEvent) {
         lk.vexview.potion.PotionTools.m0();
+        // 1.8.9 merges the two event buses: FMLCommonHandler#bus() returns MinecraftForge.EVENT_BUS
+        // (verified in the 11.15.1.1902 bytecode), so registering on both used to create a *second*
+        // handler instance for every class below - each event then ran twice (double animation
+        // frames, duplicate GUI-open handling, duplicate packets). One registration is correct.
         MinecraftForge.EVENT_BUS.register((Object)this);
-        FMLCommonHandler.instance().bus().register((Object)this);
         MinecraftForge.EVENT_BUS.register((Object)new HUDViewer());
-        FMLCommonHandler.instance().bus().register((Object)new HUDViewer());
         MinecraftForge.EVENT_BUS.register((Object)new InventoryTools());
-        FMLCommonHandler.instance().bus().register((Object)new InventoryTools());
         MinecraftForge.EVENT_BUS.register((Object)new ConnectGui());
-        FMLCommonHandler.instance().bus().register((Object)new ConnectGui());
         MinecraftForge.EVENT_BUS.register((Object)new VexGameMenu());
-        FMLCommonHandler.instance().bus().register((Object)new VexGameMenu());
         MinecraftForge.EVENT_BUS.register((Object)new AutoConnect());
-        FMLCommonHandler.instance().bus().register((Object)new AutoConnect());
         MinecraftForge.EVENT_BUS.register((Object)new FlowTools());
-        FMLCommonHandler.instance().bus().register((Object)new FlowTools());
         MinecraftForge.EVENT_BUS.register((Object)new AnnGui());
-        FMLCommonHandler.instance().bus().register((Object)new AnnGui());
         MinecraftForge.EVENT_BUS.register((Object)new NewScoreBroad());
-        FMLCommonHandler.instance().bus().register((Object)new NewScoreBroad());
         MinecraftForge.EVENT_BUS.register((Object)new MinecraftHUD());
-        FMLCommonHandler.instance().bus().register((Object)new MinecraftHUD());
         MinecraftForge.EVENT_BUS.register((Object)new GuideListener());
-        FMLCommonHandler.instance().bus().register((Object)new GuideListener());
         MinecraftForge.EVENT_BUS.register((Object)new TagView());
-        FMLCommonHandler.instance().bus().register((Object)new TagView());
         MinecraftForge.EVENT_BUS.register((Object)new CustomRender());
-        FMLCommonHandler.instance().bus().register((Object)new CustomRender());
         MinecraftForge.EVENT_BUS.register((Object)new ChatTools());
-        FMLCommonHandler.instance().bus().register((Object)new ChatTools());
         MinecraftForge.EVENT_BUS.register((Object)new ToolTipRender());
-        FMLCommonHandler.instance().bus().register((Object)new ToolTipRender());
         s9 = NetworkRegistry.INSTANCE.newEventDrivenChannel(s13);
         s9.register((Object)this);
         s10 = NetworkRegistry.INSTANCE.newEventDrivenChannel("Base64VexView");

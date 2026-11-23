@@ -152,3 +152,29 @@ pwsh -File .\runtest.ps1 -TimeoutSeconds 420
 
 > 备注：这两个问题同样存在于 1.12.2 的反混淆源码（都来自反混淆副作用），
 > 若用该源码另行构建 1.12.2 版本，需要做同样的两处修正。
+
+---
+
+## 7. 第三方代码审查提出的问题的处理（第三轮）
+
+收到一份基于字节码核对（未启动游戏）的审查意见，逐条核对后处理如下。
+
+| 审查意见 | 结论 | 处理 |
+| --- | --- | --- |
+| 空背包格会导致 GUI 打不开：`VexGui.m17()` 把玩家 36 格复制进 `VexInventory`，1.8.9 的空槽是 `null`，`ConcurrentHashMap` 拒收 `null` → NPE | **成立**，且属移植引入：1.12.2 的空槽是 `ItemStack.EMPTY`（非 null） | `VexInventory` 改用 `Collections.synchronizedMap(HashMap)`，保留“存 null 即空槽”的原语义 |
+| 14 个监听器各注册两份（`MinecraftForge.EVENT_BUS` 与 `FMLCommonHandler.bus()`） | **成立**：1.8.9 的 `FMLCommonHandler#bus()` 直接返回同一个 `MinecraftForge.EVENT_BUS`（已用 11.15.1.1902 字节码确认），而代码两处都 `new X()`，于是每类都多出一个实例 | 只保留一次注册；事件不再重复执行 |
+| `VexGuiBuilder.m6` 在工作线程里直接改正在显示的界面 | **成立**：`VexView.m1` 是线程池，复用分支没有回到主线程 | 复用分支改为 `Minecraft#addScheduledTask`，解析仍在工作线程，只有界面变更回主线程 |
+| `VexReflect` 用 MCP 字段名（`timer` / `selectedButton`）反射，在 SRG 运行环境会失败、`partialTicks` 恒为 0 | **不成立**：`ObfuscationReflectionHelper` 会先做名字映射，实机采样 `partialTicks` 为 0.122~0.154 的连续变化值 | 仍然做了加固：改为**按字段类型**查找（`Minecraft` 里唯一的 `Timer` 字段、`GuiScreen` 里唯一的 `GuiButton` 字段），不再依赖任何命名空间 |
+
+复测（真实 1.8.9 客户端，带 `inventory` 段的 GUI）：
+
+```
+[vexprobe] gamemenu after gamemenu packet: lines=3 [Update log line one, ...] url=... title=烟雨庭
+[vexprobe] effects after potion packet: count=1  id=85 potionClass=lk.vexview.potion.CustomPotion
+[vexprobe] ASSERT menuScreen=lk.vexview.ui.menu.VexGameMenu
+[vexprobe] ASSERT currentScreen=lk.vexview.gui.VexCustomGui     ← 含 36 格背包，空槽不再崩
+[vexprobe] tick 400 partialTicks=0.13765478 vexviewHandlers=14   ← 14 个注册（修复前 28）
+[vexprobe] tick 410 partialTicks=0.12296486                      ← 插值连续变化
+```
+
+两套构建（离线 `build-local.ps1` / ForgeGradle `build.gradle`）都编译通过，产出的 jar 都做过实机验证。

@@ -33,7 +33,7 @@ import net.minecraftforge.fml.common.network.internal.FMLProxyPacket;
 public class ProbeMod {
 
     private static final String GUI_JSON =
-            "{\"base\":\"[gui][local]bg.png<&>-1<&>-1<&>256<&>256<&>220<&>160<&>true<&>false"
+            "{\"inventory\":\"10:10\",\"base\":\"[gui][local]bg.png<&>-1<&>-1<&>256<&>256<&>220<&>160<&>true<&>false"
             + "<#>[txt]12<&>10<&>1.0<&>VexView 1.8.9 port<&>GUI pipeline OK"
             + "<#>[but][local]bg.png<&>70<&>60<&>80<&>18<&>[local]bg.png<&>0<&>[local]bg.png<&>OK\"}";
 
@@ -106,9 +106,38 @@ public class ProbeMod {
         if (this.ticks == 340 || this.ticks == 700) {
             this.probeAnnouncements(this.ticks);
         }
+        if (this.ticks >= 400 && this.ticks <= 410) {
+            this.probeReflect(this.ticks);
+        }
         if (this.ticks == 300) {
             GuiScreen screen = minecraft.currentScreen;
             System.out.println("[vexprobe] ASSERT currentScreen=" + (screen == null ? "null" : screen.getClass().getName()));
+        }
+    }
+
+    /** VexReflect.partialTicks() must interpolate (not always 0) and AnnGui must be registered once. */
+    private void probeReflect(int tick) {
+        try {
+            Class<?> reflect = Class.forName("lk.vexview.compat.VexReflect");
+            Object value = reflect.getMethod("partialTicks").invoke(null);
+            String busInfo = "";
+            if (tick == 400) {
+                Object bus = net.minecraftforge.common.MinecraftForge.EVENT_BUS;
+                java.lang.reflect.Field listeners = net.minecraftforge.fml.common.eventhandler.EventBus.class
+                        .getDeclaredField("listeners");
+                listeners.setAccessible(true);
+                java.util.Map<?, ?> map = (java.util.Map<?, ?>) listeners.get(bus);
+                int annGui = 0;
+                for (Object owner : map.keySet()) {
+                    if (owner != null && owner.getClass().getName().startsWith("lk.vexview.")) {
+                        ++annGui;
+                    }
+                }
+                busInfo = " vexviewHandlers=" + annGui;
+            }
+            System.out.println("[vexprobe] tick " + tick + " partialTicks=" + value + busInfo);
+        } catch (Throwable t) {
+            System.out.println("[vexprobe] reflect probe failed: " + t);
         }
     }
 

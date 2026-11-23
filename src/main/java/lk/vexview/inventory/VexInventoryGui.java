@@ -172,9 +172,16 @@ public class VexInventoryGui extends GuiInventory {
       NetPacketManager.m4(new PacketInventory("", "close"));
    }
 
-   protected void actionPerformed(GuiButton var1) throws IOException {
+   protected void actionPerformed(GuiButton var1) {
       if (var1.id == 10) {
-         super.actionPerformed(var1);
+         // GuiScreen#actionPerformed declares IOException; whether the intermediate override in
+         // GuiInventory keeps it differs between the MCP mapping sets, so it is handled here
+         // instead of in the signature - that compiles under both.
+         try {
+            super.actionPerformed(var1);
+         } catch (Exception exception) {
+            exception.printStackTrace();
+         }
          this.buttonList.clear();
          this.buttonList.add(var1);
          this.m7();

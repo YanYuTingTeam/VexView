@@ -3,8 +3,9 @@
  */
 package lk.vexview.gui.util;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
@@ -69,7 +70,12 @@ implements IInventory {
 
     public VexInventory() {
         VexInventory vexInventory = this;
-        vexInventory.f1 = new ConcurrentHashMap<Integer, ItemStack>();
+        // A ConcurrentHashMap rejects null values, but in 1.8.9 an empty slot *is* null
+        // (1.12.2 used the non-null ItemStack.EMPTY) and Slot#putStack(null) lands here for
+        // every empty player slot - that used to throw while opening a GUI with a backpack.
+        // A synchronised HashMap accepts the nulls and keeps the original semantics:
+        // a stored null still reads back as "empty slot".
+        vexInventory.f1 = Collections.synchronizedMap(new HashMap<Integer, ItemStack>());
     }
 
     public void setField(int n, int n2) {

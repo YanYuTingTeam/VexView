@@ -49,11 +49,16 @@ public class VexGuiBuilder {
             vexGui.f13 = VexGuiBuilder.m7(jSONObject.getString("scrollinglist"));
         }
         ItemPickTools.s1 = null;
-        if (Minecraft.getMinecraft().currentScreen != null && Minecraft.getMinecraft().currentScreen instanceof VexCustomGui && !vexGui.f5) {
-            VexCustomGui vexCustomGui = (VexCustomGui)Minecraft.getMinecraft().currentScreen;
-            vexCustomGui.f3 = vexGui;
-            vexCustomGui.setContainerSlots(new VexContainer(vexGui.m4()));
-            vexCustomGui.reInit();
+        GuiScreen guiScreen = Minecraft.getMinecraft().currentScreen;
+        if (guiScreen instanceof VexCustomGui && !vexGui.f5) {
+            // m6 runs on a worker thread (VexView.m1); swapping the live screen from there raced
+            // with the render/input loop, so the mutation is handed back to the client thread.
+            VexCustomGui vexCustomGui = (VexCustomGui)guiScreen;
+            Minecraft.getMinecraft().addScheduledTask(() -> {
+                vexCustomGui.f3 = vexGui;
+                vexCustomGui.setContainerSlots(new VexContainer(vexGui.m4()));
+                vexCustomGui.reInit();
+            });
         } else {
             Minecraft.getMinecraft().addScheduledTask(() -> {
                 VexGui vexGui2 = vexGui;
