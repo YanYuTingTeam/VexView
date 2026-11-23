@@ -3,6 +3,7 @@
  */
 package lk.vexview;
 
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -13,6 +14,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.zip.GZIPInputStream;
 import lk.vexview.VexConfig;
 import lk.vexview.announcement.AnnGui;
@@ -25,6 +27,7 @@ import lk.vexview.hud.HUDViewer;
 import lk.vexview.hud.MinecraftHUD;
 import lk.vexview.hud.util.Base64HudTools;
 import lk.vexview.inventory.InventoryTools;
+import lk.vexview.net.Base64ImagePackets;
 import lk.vexview.net.NetPacketManager;
 import lk.vexview.net.packet.PacketKeyPress;
 import lk.vexview.scoreboard.NewScoreBroad;
@@ -33,8 +36,11 @@ import lk.vexview.tooltip.ToolTipRender;
 import lk.vexview.tutorial.GuideListener;
 import lk.vexview.ui.menu.VexGameMenu;
 import lk.vexview.ui.verification.ConnectGui;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.network.NetHandlerPlayClient;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.network.NetworkManager;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.FMLCommonHandler;
@@ -91,6 +97,20 @@ public class VexView {
         byte[] data = new byte[clientCustomPacketEvent.packet.payload().readableBytes()];
         clientCustomPacketEvent.packet.payload().getBytes(0, data);
         NetPacketManager.m5(VexView.m3(data));
+    }
+
+    @SubscribeEvent
+    public void onClientDisconnect(FMLNetworkEvent.ClientDisconnectionFromServerEvent event) {
+        Base64Tools.disconnect(event.manager);
+        Base64HudTools.disconnect(event.manager);
+    }
+
+    public static Base64ImagePackets<NetworkManager> base64ImagePackets(BiConsumer<String, BufferedImage> upload) {
+        return new Base64ImagePackets<>(s1::execute, task -> Minecraft.getMinecraft().addScheduledTask(task),
+            connection -> {
+                NetHandlerPlayClient active = Minecraft.getMinecraft().getNetHandler();
+                return active != null && active.getNetworkManager() == connection && connection.isChannelOpen();
+            }, upload);
     }
 
     public static Future<Boolean> m2(Callable<Boolean> callable) {

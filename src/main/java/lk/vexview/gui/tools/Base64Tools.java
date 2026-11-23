@@ -3,44 +3,40 @@
  */
 package lk.vexview.gui.tools;
 
-import java.io.ByteArrayInputStream;
-import java.io.UnsupportedEncodingException;
-import java.util.Base64;
-import javax.imageio.ImageIO;
+import io.netty.buffer.ByteBuf;
+import java.nio.charset.StandardCharsets;
 import lk.vexview.VexView;
 import lk.vexview.engine.BufferImageLib;
+import lk.vexview.net.Base64ImagePackets;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.network.NetHandlerPlayClient;
+import net.minecraft.network.NetworkManager;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent;
-import org.json.JSONObject;
 
 public class Base64Tools {
-    private static String s1 = "";
+    private static final Base64ImagePackets<NetworkManager> IMAGES = VexView.base64ImagePackets(BufferImageLib::m2);
 
     public static void m2(String string) {
-        VexView.m1(() -> {
-            try {
-                if (!s1.equals("")) {
-                    Base64.Decoder decoder = Base64.getDecoder();
-                    ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(decoder.decode(string.getBytes("utf-8")));
-                    BufferImageLib.m2(s1, ImageIO.read(byteArrayInputStream));
-                    s1 = "";
-                    return;
-                }
-                JSONObject jSONObject = new JSONObject(string);
-                s1 = jSONObject.getString("id");
-                return;
-            }
-            catch (Exception exception) {
-                s1 = "";
-            }
-        });
+        NetHandlerPlayClient active = Minecraft.getMinecraft().getNetHandler();
+        if (active != null) {
+            IMAGES.receive(active.getNetworkManager(), string);
+        }
+    }
+
+    public static void disconnect(NetworkManager manager) {
+        IMAGES.disconnect(manager);
     }
 
     @SubscribeEvent
-    public void onClientPacket(FMLNetworkEvent.ClientCustomPacketEvent clientCustomPacketEvent) throws UnsupportedEncodingException {
-        byte[] data = new byte[clientCustomPacketEvent.packet.payload().readableBytes()];
-        clientCustomPacketEvent.packet.payload().getBytes(0, data);
-        Base64Tools.m2(new String(data, "utf-8").replace("<Base64_image>", ""));
+    public void onClientPacket(FMLNetworkEvent.ClientCustomPacketEvent event) {
+        if (event.handler instanceof NetHandlerPlayClient
+                && ((NetHandlerPlayClient) event.handler).getNetworkManager() == event.manager
+                && event.manager.isChannelOpen()) {
+            ByteBuf payload = event.packet.payload();
+            String text = payload.toString(payload.readerIndex(), payload.readableBytes(), StandardCharsets.UTF_8);
+            IMAGES.receive(event.manager, text.replace("<Base64_image>", ""));
+        }
     }
 }
 
