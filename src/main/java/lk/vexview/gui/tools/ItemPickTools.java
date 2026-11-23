@@ -61,10 +61,17 @@ public class ItemPickTools {
     }
 
     static void m3(Slot slot, Container container) {
+        ItemStack slotStack = slot.getStack();
+        if (slotStack == null) {
+            if (s1 != null) {
+                slot.putStack(s1.copy());
+                s1 = null;
+            }
+            return;
+        }
         if (s1 == null) {
-            Slot slot2 = slot;
-            s1 = slot2.getStack().copy();
-            slot2.putStack(null);
+            s1 = slotStack.copy();
+            slot.putStack(null);
             return;
         }
         if (ItemPickTools.m4(slot.getStack(), s1) && !slot.getStack().isItemStackDamageable() && !s1.isItemStackDamageable()) {
@@ -82,7 +89,7 @@ public class ItemPickTools {
             }
         } else {
             Slot slot4 = slot;
-            ItemStack itemStack = slot4.getStack().copy();
+            ItemStack itemStack = slotStack.copy();
             slot4.putStack(s1.copy());
             s1 = itemStack;
         }
