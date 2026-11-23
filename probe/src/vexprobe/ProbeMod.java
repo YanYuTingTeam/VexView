@@ -42,6 +42,7 @@ public class ProbeMod {
         {60, "announce", "NORMAL", "[VexProbe] announce ok"},
         {62, "potion", "", "vexview/textures/normal.png<&>VexPotion<&>6000<&>1<&>false"},
         {64, "gamemenu", "", "x<##>https://www.vexview.top<##>烟雨庭<##>Update log line one<#>Update log line two<#>third line"},
+        {70, "effects", "lightning", "0<&>64<&>0<&>1.0<&>1.0<&>1.0"},
         {260, "gui", "end", GUI_JSON},
     };
 
@@ -95,6 +96,9 @@ public class ProbeMod {
         if (this.ticks == 70) {
             this.dumpGameMenu("after gamemenu packet");
         }
+        if (this.ticks == 90) {
+            this.dumpEffectsQueue();
+        }
         if (this.ticks == 200) {
             System.out.println("[vexprobe] opening in-game menu");
             minecraft.displayGuiScreen(new net.minecraft.client.gui.GuiIngameMenu());
@@ -138,6 +142,19 @@ public class ProbeMod {
             System.out.println("[vexprobe] tick " + tick + " partialTicks=" + value + busInfo);
         } catch (Throwable t) {
             System.out.println("[vexprobe] reflect probe failed: " + t);
+        }
+    }
+
+    /** Reads VexView's pending-effect queue: proves the `effects`/lightning packet was accepted. */
+    private void dumpEffectsQueue() {
+        try {
+            Class<?> render = Class.forName("lk.vexview.effect.CustomRender");
+            java.lang.reflect.Field queue = render.getDeclaredField("s1");
+            queue.setAccessible(true);
+            java.util.List<?> list = (java.util.List<?>) queue.get(null);
+            System.out.println("[vexprobe] lightning effects queued=" + list.size());
+        } catch (Throwable t) {
+            System.out.println("[vexprobe] effect probe failed: " + t);
         }
     }
 
