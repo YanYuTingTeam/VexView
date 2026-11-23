@@ -52,9 +52,10 @@ public class TagBuilder {
         String string = jSONObject2.getString("packet_sub_type");
         String string2 = jSONObject2.getString("packet_data");
         ComponentElementCollection componentElementCollection = new ComponentElementCollection(string2, "<&>");
-        if (componentElementCollection.m8(0).equals(s1)) {
+        String worldName = componentElementCollection.m8(0);
+        if (!worldName.equals(s1)) {
             s4.clear();
-            s1 = componentElementCollection.m8(0);
+            s1 = worldName;
         }
         if (string.equals("remove")) {
             if (s4.containsKey(componentElementCollection.m8(1))) {
