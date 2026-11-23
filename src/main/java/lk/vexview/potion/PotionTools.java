@@ -28,26 +28,30 @@ public class PotionTools {
     private static final List<CustomPotion> s4 = new ArrayList<CustomPotion>();          // free beneficial slots
     private static final List<CustomPotion> s5 = new ArrayList<CustomPotion>();          // free harmful slots
     private static final Map<String, CustomPotion> s6 = new HashMap<String, CustomPotion>(); // "B:/G:" + name -> slot
+    private static boolean poolInitialized;
 
     /** Creates the pool. Must run during preInit, before the Forge registries freeze. */
-    public static void m0() {
-        if (!s4.isEmpty() || !s5.isEmpty()) {
+    public static synchronized void m0() {
+        if (poolInitialized) {
             return;
         }
         for (int n = 0; n < 32; ++n) {
             s4.add(new CustomPotion("", "", false, 0xFFFFFF));
             s5.add(new CustomPotion("", "", true, 0xFFFFFF));
         }
+        poolInitialized = true;
     }
 
-    /** Slot for the given potion name, re-pointed at the image the packet described. */
-    private static CustomPotion m4(String string, String string2, boolean bl) {
-        PotionTools.m0();
+    /** Returns the named slot, or null if no slot of the requested kind is available. */
+    private static synchronized CustomPotion m4(String string, String string2, boolean bl) {
         String string3 = (bl ? "B:" : "G:") + string2;
         CustomPotion customPotion = s6.get(string3);
         if (customPotion == null) {
             List<CustomPotion> list = bl ? s5 : s4;
-            customPotion = !list.isEmpty() ? list.remove(list.size() - 1) : (bl ? s5.get(0) : s4.get(0));
+            if (list.isEmpty()) {
+                return null;
+            }
+            customPotion = list.remove(list.size() - 1);
             s6.put(string3, customPotion);
         }
         customPotion.m2(string, string2);
@@ -85,8 +89,11 @@ public class PotionTools {
     }
 
     private static /* synthetic */ void m2(String string, String string2, int n, int n2, boolean bl) {
-        PotionTools.m1(string);
         CustomPotion customPotion = PotionTools.m4(string, string2, bl);
+        if (customPotion == null) {
+            return;
+        }
+        PotionTools.m1(string);
         Minecraft.getMinecraft().thePlayer.removePotionEffectClient(customPotion.getId());
         Minecraft.getMinecraft().thePlayer.addPotionEffect(new PotionEffect(customPotion.getId(), n, n2));
     }
