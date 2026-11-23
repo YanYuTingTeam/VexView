@@ -5,6 +5,7 @@ package lk.vexview.gui.tools;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import lk.vexview.VexView;
 import lk.vexview.engine.ComponentFactory;
 import lk.vexview.engine.ElementSplitter;
@@ -13,64 +14,78 @@ import lk.vexview.gui.LoadingGui;
 import lk.vexview.gui.VexCustomGui;
 import lk.vexview.gui.core.VexGui;
 import lk.vexview.gui.core.VexList;
-import lk.vexview.gui.tools.ItemPickTools;
 import lk.vexview.gui.util.VexContainer;
 import lk.vexview.net.NetPacketManager;
 import lk.vexview.net.packet.PacketGuiClose;
 import lk.vexview.net.packet.PacketGuiOpen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.item.ItemStack;
+import net.minecraft.client.network.NetHandlerPlayClient;
 import org.json.JSONObject;
 
 public class VexGuiBuilder {
+    private static final AtomicLong guiRequests = new AtomicLong();
+
     public static void m3(String string) {
-        if (Minecraft.getMinecraft().currentScreen != null && Minecraft.getMinecraft().currentScreen instanceof VexCustomGui) {
-            ((VexCustomGui)Minecraft.getMinecraft().currentScreen).f4 = false;
-            NetPacketManager.m4(new PacketGuiClose());
-        }
-        VexView.m1(() -> VexGuiBuilder.m6(new JSONObject(string)));
+        Minecraft minecraft = Minecraft.getMinecraft();
+        NetHandlerPlayClient connection = minecraft.getNetHandler();
+        long request = guiRequests.incrementAndGet();
+        VexView.m1(() -> {
+            JSONObject payload = new JSONObject(string);
+            Map<String, List<HoverTextElementCollection>> components =
+                ElementSplitter.m1(payload.getString("base"), "<#>", "<&>", "<#&>");
+            Map<String, List<HoverTextElementCollection>> scrollingList = payload.has("scrollinglist")
+                ? ElementSplitter.m2(payload.getString("scrollinglist"), "<#>", "<&>", "<#&>") : null;
+            String inventory = payload.has("inventory") ? payload.getString("inventory") : null;
+            minecraft.addScheduledTask(() -> {
+                // A later GUI request or a new connection can supersede this worker.
+                if (request == guiRequests.get() && connection != null && minecraft.getNetHandler() == connection) {
+                    m6(minecraft, components, scrollingList, inventory);
+                }
+            });
+        });
     }
 
-    private static /* synthetic */ void m6(JSONObject jSONObject) {
-        Map<String, List<HoverTextElementCollection>> map = ElementSplitter.m1(jSONObject.getString("base"), "<#>", "<&>", "<#&>");
-        HoverTextElementCollection hoverTextElementCollection = map.get("gui").get(0);
-        VexGui vexGui = new VexGui(hoverTextElementCollection.m3(1), hoverTextElementCollection.m3(2), hoverTextElementCollection.m3(3), hoverTextElementCollection.m3(4), hoverTextElementCollection.m3(5), hoverTextElementCollection.m3(6), hoverTextElementCollection.m8(0), hoverTextElementCollection.m1(7), hoverTextElementCollection.m1(8));
-        Map<String, List<HoverTextElementCollection>> map2 = map;
-        map2.remove("gui");
-        vexGui.m2();
-        map2.values().forEach(list -> list.forEach(hoverText -> vexGui.m1(ComponentFactory.m4(hoverText))));
-        vexGui.m7().forEach(vexComponent -> vexComponent.m2());
-        if (jSONObject.has("inventory")) {
-            vexGui.m17(jSONObject.getString("inventory"));
+    private static void m6(Minecraft minecraft, Map<String, List<HoverTextElementCollection>> components,
+            Map<String, List<HoverTextElementCollection>> scrollingList, String inventory) {
+        HoverTextElementCollection layout = components.remove("gui").get(0);
+        VexGui gui = new VexGui(layout.m3(1), layout.m3(2), layout.m3(3), layout.m3(4), layout.m3(5),
+            layout.m3(6), layout.m8(0), layout.m1(7), layout.m1(8));
+        gui.m2();
+        components.values().forEach(list -> list.forEach(element -> gui.m1(ComponentFactory.m4(element))));
+        gui.m7().forEach(component -> component.m2());
+        if (inventory != null) {
+            gui.m17(inventory);
         }
-        vexGui.m9();
-        if (jSONObject.has("scrollinglist")) {
-            vexGui.f13 = VexGuiBuilder.m7(jSONObject.getString("scrollinglist"));
+        gui.m9();
+        if (scrollingList != null) {
+            gui.f13 = buildScrollingList(scrollingList);
         }
+
         ItemPickTools.s1 = null;
-        GuiScreen guiScreen = Minecraft.getMinecraft().currentScreen;
-        if (guiScreen instanceof VexCustomGui && !vexGui.f5) {
-            // m6 runs on a worker thread (VexView.m1); swapping the live screen from there raced
-            // with the render/input loop, so the mutation is handed back to the client thread.
-            VexCustomGui vexCustomGui = (VexCustomGui)guiScreen;
-            Minecraft.getMinecraft().addScheduledTask(() -> {
-                vexCustomGui.f3 = vexGui;
-                vexCustomGui.setContainerSlots(new VexContainer(vexGui.m4()));
-                vexCustomGui.reInit();
-            });
-        } else {
-            Minecraft.getMinecraft().addScheduledTask(() -> {
-                VexGui vexGui2 = vexGui;
-                VexGui vexGui3 = vexGui;
-                Minecraft.getMinecraft().displayGuiScreen((GuiScreen)new LoadingGui(new VexCustomGui(vexGui3, new VexContainer(vexGui3.m4()))));
-            });
+        GuiScreen screen = minecraft.currentScreen;
+        if (screen instanceof VexCustomGui) {
+            VexCustomGui oldGui = (VexCustomGui) screen;
+            oldGui.f4 = false;
+            NetPacketManager.m4(new PacketGuiClose());
+            if (!gui.f5) {
+                oldGui.f3 = gui;
+                oldGui.setContainerSlots(new VexContainer(gui.m4()));
+                oldGui.reInit();
+                oldGui.f4 = true;
+                NetPacketManager.m4(new PacketGuiOpen());
+                return;
+            }
         }
+        minecraft.displayGuiScreen(new LoadingGui(new VexCustomGui(gui, new VexContainer(gui.m4()))));
         NetPacketManager.m4(new PacketGuiOpen());
     }
 
     public static VexList m7(String string) {
-        Map<String, List<HoverTextElementCollection>> map = ElementSplitter.m2(string, "<#>", "<&>", "<#&>");
+        return buildScrollingList(ElementSplitter.m2(string, "<#>", "<&>", "<#&>"));
+    }
+
+    private static VexList buildScrollingList(Map<String, List<HoverTextElementCollection>> map) {
         HoverTextElementCollection hoverTextElementCollection = map.get("list").get(0);
         VexList vexList = new VexList(hoverTextElementCollection.m3(0), hoverTextElementCollection.m3(1), hoverTextElementCollection.m3(2), hoverTextElementCollection.m3(3), hoverTextElementCollection.m3(4));
         Map<String, List<HoverTextElementCollection>> map2 = map;
