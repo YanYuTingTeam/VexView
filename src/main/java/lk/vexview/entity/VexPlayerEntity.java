@@ -5,7 +5,6 @@ package lk.vexview.entity;
 
 import com.mojang.authlib.GameProfile;
 import java.util.UUID;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.world.World;
@@ -25,7 +24,7 @@ extends AbstractClientPlayer {
     }
 
     public VexPlayerEntity(World world) {
-        super((World)Minecraft.getMinecraft().theWorld, new GameProfile(UUID.randomUUID(), ""));
+        super(world, new GameProfile(UUID.randomUUID(), ""));
     }
 }
 

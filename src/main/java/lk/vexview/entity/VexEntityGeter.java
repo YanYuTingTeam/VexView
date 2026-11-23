@@ -71,24 +71,29 @@ import net.minecraft.entity.projectile.EntitySmallFireball;
 import net.minecraft.entity.projectile.EntitySnowball;
 import net.minecraft.entity.projectile.EntityWitherSkull;
 import net.minecraft.item.ItemStack;
-import net.minecraft.world.World;
 
 public class VexEntityGeter {
-    private static WorldClient s1 = Minecraft.getMinecraft().theWorld;
-
     public static AbstractClientPlayer m1(GameProfile gameProfile) {
-        for (Entity entity : Minecraft.getMinecraft().theWorld.loadedEntityList) {
+        WorldClient world = Minecraft.getMinecraft().theWorld;
+        if (world == null) {
+            return null;
+        }
+        for (Entity entity : world.loadedEntityList) {
             AbstractClientPlayer abstractClientPlayer;
             if (!(entity instanceof AbstractClientPlayer) || !(abstractClientPlayer = (AbstractClientPlayer)entity).getGameProfile().getName().equals(gameProfile.getName())) continue;
             return abstractClientPlayer;
         }
-        return new VexPlayerEntity(Minecraft.getMinecraft().theWorld, gameProfile);
+        return new VexPlayerEntity(world, gameProfile);
     }
 
     /*
      * Enabled aggressive block sorting
      */
     public static Entity m2(String string) {
+        WorldClient world = Minecraft.getMinecraft().theWorld;
+        if (world == null) {
+            return null;
+        }
         int n;
         block174: {
             String string2 = string;
@@ -526,10 +531,10 @@ public class VexEntityGeter {
                 return null;
             }
             case 1: {
-                return new EntityArmorStand((World)s1);
+                return new EntityArmorStand(world);
             }
             case 2: {
-                return new EntityArrow((World)s1){
+                return new EntityArrow(world){
 
                     protected ItemStack getArrowStack() {
                         return null;
@@ -537,46 +542,46 @@ public class VexEntityGeter {
                 };
             }
             case 3: {
-                return new EntityBat((World)s1);
+                return new EntityBat(world);
             }
             case 4: {
-                return new EntityBlaze((World)s1);
+                return new EntityBlaze(world);
             }
             case 5: {
-                return new EntityBoat((World)s1);
+                return new EntityBoat(world);
             }
             case 6: {
-                return new EntityCaveSpider((World)s1);
+                return new EntityCaveSpider(world);
             }
             case 7: {
-                return new EntityChicken((World)s1);
+                return new EntityChicken(world);
             }
             case 8: {
-                return new EntityCow((World)s1);
+                return new EntityCow(world);
             }
             case 9: {
-                return new EntityCreeper((World)s1);
+                return new EntityCreeper(world);
             }
             case 10: {
-                return new EntityHorse((World)s1);
+                return new EntityHorse(world);
             }
             case 11: {
-                return new EntityLargeFireball((World)s1);
+                return new EntityLargeFireball(world);
             }
             case 12: {
-                return new EntityGuardian((World)s1);
+                return new EntityGuardian(world);
             }
             case 13: {
-                return new EntityEnderCrystal((World)s1);
+                return new EntityEnderCrystal(world);
             }
             case 14: {
-                return new EntityDragon((World)s1);
+                return new EntityDragon(world);
             }
             case 15: {
-                return new EntityEnderman((World)s1);
+                return new EntityEnderman(world);
             }
             case 16: {
-                return new EntityEndermite((World)s1);
+                return new EntityEndermite(world);
             }
             case 17: {
                 return null;
@@ -585,109 +590,109 @@ public class VexEntityGeter {
                 return null;
             }
             case 19: {
-                return new EntityXPOrb((World)s1);
+                return new EntityXPOrb(world);
             }
             case 20: {
-                return new EntityEnderEye((World)s1);
+                return new EntityEnderEye(world);
             }
             case 21: {
-                return new EntityFallingBlock((World)s1);
+                return new EntityFallingBlock(world);
             }
             case 22: {
-                return new EntityFireworkRocket((World)s1);
+                return new EntityFireworkRocket(world);
             }
             case 23: {
-                return new EntityGhast((World)s1);
+                return new EntityGhast(world);
             }
             case 24: {
-                return new EntityGiantZombie((World)s1);
+                return new EntityGiantZombie(world);
             }
             case 25: {
-                return new EntityGuardian((World)s1);
+                return new EntityGuardian(world);
             }
             case 26: {
-                return new EntityHorse((World)s1);
+                return new EntityHorse(world);
             }
             case 27: {
-                return new EntityZombie((World)s1);
+                return new EntityZombie(world);
             }
             case 28: {
                 return null;
             }
             case 29: {
-                return new EntityItem((World)s1);
+                return new EntityItem(world);
             }
             case 30: {
-                return new EntityItemFrame((World)s1);
+                return new EntityItemFrame(world);
             }
             case 31: {
-                return new EntityLargeFireball((World)s1);
+                return new EntityLargeFireball(world);
             }
             case 32: {
-                return new EntityLeashKnot((World)s1);
+                return new EntityLeashKnot(world);
             }
             case 33: {
-                return new EntityHorse((World)s1);
+                return new EntityHorse(world);
             }
             case 34: {
                 return null;
             }
             case 35: {
-                return new EntityMagmaCube((World)s1);
+                return new EntityMagmaCube(world);
             }
             case 36: {
-                return new EntityMinecartEmpty((World)s1);
+                return new EntityMinecartEmpty(world);
             }
             case 37: {
-                return new EntityMinecartChest((World)s1);
+                return new EntityMinecartChest(world);
             }
             case 38: {
-                return new EntityMinecartCommandBlock((World)s1);
+                return new EntityMinecartCommandBlock(world);
             }
             case 39: {
-                return new EntityMinecartFurnace((World)s1);
+                return new EntityMinecartFurnace(world);
             }
             case 40: {
-                return new EntityMinecartHopper((World)s1);
+                return new EntityMinecartHopper(world);
             }
             case 41: {
-                return new EntityMinecartMobSpawner((World)s1);
+                return new EntityMinecartMobSpawner(world);
             }
             case 42: {
-                return new EntityMinecartTNT((World)s1);
+                return new EntityMinecartTNT(world);
             }
             case 43: {
-                return new EntityHorse((World)s1);
+                return new EntityHorse(world);
             }
             case 44: {
-                return new EntityMooshroom((World)s1);
+                return new EntityMooshroom(world);
             }
             case 45: {
-                return new EntityOcelot((World)s1);
+                return new EntityOcelot(world);
             }
             case 46: {
-                return new EntityPainting((World)s1);
+                return new EntityPainting(world);
             }
             case 47: {
                 return null;
             }
             case 48: {
-                return new EntityPig((World)s1);
+                return new EntityPig(world);
             }
             case 49: {
-                return new EntityPigZombie((World)s1);
+                return new EntityPigZombie(world);
             }
             case 50: {
                 return null;
             }
             case 51: {
-                return new EntityTNTPrimed((World)s1);
+                return new EntityTNTPrimed(world);
             }
             case 52: {
-                return new EntityRabbit((World)s1);
+                return new EntityRabbit(world);
             }
             case 53: {
-                return new EntitySheep((World)s1);
+                return new EntitySheep(world);
             }
             case 54: {
                 return null;
@@ -696,91 +701,91 @@ public class VexEntityGeter {
                 return null;
             }
             case 56: {
-                return new EntitySilverfish((World)s1);
+                return new EntitySilverfish(world);
             }
             case 57: {
-                return new EntitySkeleton((World)s1);
+                return new EntitySkeleton(world);
             }
             case 58: {
-                return new EntityHorse((World)s1);
+                return new EntityHorse(world);
             }
             case 59: {
-                return new EntitySlime((World)s1);
+                return new EntitySlime(world);
             }
             case 60: {
-                return new EntitySmallFireball((World)s1);
+                return new EntitySmallFireball(world);
             }
             case 61: {
-                return new EntitySnowman((World)s1);
+                return new EntitySnowman(world);
             }
             case 62: {
-                return new EntitySnowball((World)s1);
+                return new EntitySnowball(world);
             }
             case 63: {
-                return new EntityArrow((World)s1);
+                return new EntityArrow(world);
             }
             case 64: {
-                return new EntitySpider((World)s1);
+                return new EntitySpider(world);
             }
             case 65: {
-                return new EntitySquid((World)s1);
+                return new EntitySquid(world);
             }
             case 66: {
-                return new EntitySkeleton((World)s1);
+                return new EntitySkeleton(world);
             }
             case 67: {
-                return new EntityHorse((World)s1);
+                return new EntityHorse(world);
             }
             case 68: {
-                return new EntityEgg((World)s1);
+                return new EntityEgg(world);
             }
             case 69: {
-                return new EntityEnderPearl((World)s1);
+                return new EntityEnderPearl(world);
             }
             case 70: {
-                return new EntityExpBottle((World)s1);
+                return new EntityExpBottle(world);
             }
             case 71: {
-                return new EntityPotion((World)s1);
+                return new EntityPotion(world);
             }
             case 72: {
                 return null;
             }
             case 73: {
-                return new EntityVillager((World)s1);
+                return new EntityVillager(world);
             }
             case 74: {
-                return new EntityIronGolem((World)s1);
+                return new EntityIronGolem(world);
             }
             case 75: {
                 return null;
             }
             case 76: {
-                return new EntityWitch((World)s1);
+                return new EntityWitch(world);
             }
             case 77: {
-                return new EntityWither((World)s1);
+                return new EntityWither(world);
             }
             case 78: {
-                return new EntitySkeleton((World)s1);
+                return new EntitySkeleton(world);
             }
             case 79: {
-                return new EntityWitherSkull((World)s1);
+                return new EntityWitherSkull(world);
             }
             case 80: {
-                return new EntityWolf((World)s1);
+                return new EntityWolf(world);
             }
             case 81: {
-                return new EntityZombie((World)s1);
+                return new EntityZombie(world);
             }
             case 82: {
-                return new EntityHorse((World)s1);
+                return new EntityHorse(world);
             }
             case 83: {
-                return new EntityZombie((World)s1);
+                return new EntityZombie(world);
             }
             case 84: {
-                return new VexPlayerEntity((World)Minecraft.getMinecraft().theWorld);
+                return new VexPlayerEntity(world);
             }
         }
         System.out.println(string);

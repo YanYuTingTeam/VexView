@@ -83,6 +83,9 @@ public class VexEntityRender {
     }
 
     public static void m3(int n, int n2, int n3, Entity entity, boolean bl) {
+        if (entity == null) {
+            return;
+        }
         RenderManager renderManager;
         GlStateManager.enableColorMaterial();
         GlStateManager.pushMatrix();
