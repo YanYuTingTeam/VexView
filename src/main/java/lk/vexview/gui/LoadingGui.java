@@ -7,14 +7,20 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import lk.vexview.VexConfig;
+import lk.vexview.announcement.AnnGui;
+import lk.vexview.announcement.Announcement;
+import lk.vexview.announcement.Type;
 import lk.vexview.gui.VexCustomGui;
 import lk.vexview.gui.core.VexButton;
 import lk.vexview.gui.core.VexCheckBox;
 import lk.vexview.gui.core.VexComponent;
+import lk.vexview.gui.core.VexGui;
 import lk.vexview.gui.core.VexImage;
 import lk.vexview.net.NetPacketManager;
 import lk.vexview.net.packet.PacketGuiClose;
@@ -25,6 +31,8 @@ import net.minecraft.util.ResourceLocation;
 
 public class LoadingGui
 extends GuiScreen {
+    private static final long LOAD_TIMEOUT = TimeUnit.SECONDS.toNanos(30);
+    private final long loadStarted = System.nanoTime();
     String f1;
     Map<Integer, String> f2;
     private static final ResourceLocation s1 = new ResourceLocation("vexview", "textures/loading.png");
@@ -34,6 +42,7 @@ extends GuiScreen {
     public int f6;
     VexCustomGui f7;
     List<VexComponent> f8;
+    private boolean openingGui;
 
     public void renderError(int n, int n2, float f) {
         if (!this.f2.isEmpty()) {
@@ -70,7 +79,7 @@ extends GuiScreen {
     }
 
     public void onGuiClosed() {
-        if (!this.isDone()) {
+        if (!this.openingGui) {
             NetPacketManager.m4(new PacketGuiClose());
         }
     }
@@ -93,7 +102,7 @@ extends GuiScreen {
             LoadingGui loadingGui5 = this;
             loadingGui5.f8.addAll(loadingGui5.f7.f3.f13.f6);
         }
-        this.f3 = this.f8.size();
+        this.f3 = this.f8.size() + 1;
     }
 
     /*
@@ -175,6 +184,7 @@ extends GuiScreen {
     }
 
     public void drawScreen(int n, int n2, float f) {
+        boolean ready = this.isDone();
         LoadingGui loadingGui = this;
         loadingGui.mc.getTextureManager().bindTexture(s1);
         LoadingGui loadingGui2 = this;
@@ -183,64 +193,79 @@ extends GuiScreen {
         LoadingGui loadingGui3 = this;
         loadingGui3.renderText(n, n2, f);
         loadingGui3.renderError(n, n2, f);
-        if ((double)loadingGui3.f6 <= 144.0 * ((double)this.f4 / (double)this.f3)) {
+        if ((double)loadingGui3.f6 < 144.0 * ((double)this.f4 / (double)this.f3)) {
             ++this.f6;
         }
-        if (this.isDone()) {
-            Minecraft.getMinecraft().displayGuiScreen((GuiScreen)this.f7);
+        if (ready) {
+            Minecraft minecraft = Minecraft.getMinecraft();
+            this.openingGui = true;
+            try {
+                minecraft.displayGuiScreen(this.f7);
+            } finally {
+                this.openingGui = false;
+            }
+            if (minecraft.currentScreen == this.f7) {
+                for (String error : this.f2.values()) {
+                    AnnGui.m1(new Announcement(error, Type.s3));
+                }
+            }
         }
     }
 
-    /*
-     * Enabled force condition propagation
-     * Lifted jumps to return sites
-     */
     public boolean isDone() {
-        int n = 0;
-        if (this.f7.f3.f7.isDone()) {
-            try {
-                if (!this.f7.f3.f7.get().booleanValue()) {
-                    if (!this.f2.containsKey(this.f7.f3.hashCode())) {
-                        if (this.f7.f3.m1()) {
-                            this.f2.put(this.f7.f3.hashCode(), new StringBuilder().insert(0, "> ").append(I18n.format((String)"image.dowmloadfailed.local.a", (Object[])new Object[0])).append(" .minecraft/").append(VexConfig.s1).append("/").append(this.f7.f3.f9.replace("[local]", "")).append(" ").append(I18n.format((String)"image.dowmloadfailed.local.b", (Object[])new Object[0])).toString());
-                        } else {
-                            this.f2.put(this.f7.f3.hashCode(), new StringBuilder().insert(0, "> ").append(I18n.format((String)"image.dowmloadfailed.local.c", (Object[])new Object[0])).append(" ").append(this.f7.f3.f9).append(" ").append(I18n.format((String)"image.dowmloadfailed.local.b", (Object[])new Object[0])).toString());
-                        }
-                        return false;
-                    }
-                    return false;
-                }
-            }
-            catch (InterruptedException | ExecutionException exception) {
-                exception.printStackTrace();
+        int completed = 0;
+        VexGui gui = this.f7.f3;
+        boolean timedOut = System.nanoTime() - this.loadStarted >= LOAD_TIMEOUT;
+        if (hasFinished(gui.f7, timedOut)) {
+            ++completed;
+            if (!this.f2.containsKey(gui.hashCode()) && !hasSucceeded(gui.f7)) {
+                String location = gui.m1()
+                    ? I18n.format("image.dowmloadfailed.local.a") + " .minecraft/" + VexConfig.s1 + "/" + gui.f9.replace("[local]", "")
+                    : I18n.format("image.dowmloadfailed.local.c") + " " + gui.f9;
+                this.f2.put(gui.hashCode(), "> " + location + " " + I18n.format("image.dowmloadfailed.local.b"));
             }
         }
-        for (VexComponent vexComponent : this.f8) {
-            if (vexComponent.m4().isEmpty()) {
-                ++n;
-                continue;
-            }
-            VexComponent vexComponent2 = vexComponent;
-            int n2 = vexComponent2.m4().size();
-            int n3 = 0;
-            for (Future<Boolean> future : vexComponent2.m4()) {
-                if (!future.isDone()) continue;
-                try {
-                    if (future.get().booleanValue()) {
-                        ++n3;
-                        continue;
-                    }
-                    this.setFailed(vexComponent, n3);
-                }
-                catch (InterruptedException | ExecutionException exception) {
-                    exception.printStackTrace();
+        for (VexComponent component : this.f8) {
+            boolean finished = true;
+            List<Future<Boolean>> downloads = component.m4();
+            for (int i = 0; i < downloads.size(); ++i) {
+                Future<Boolean> download = downloads.get(i);
+                if (!hasFinished(download, timedOut)) {
+                    finished = false;
+                } else if (!this.f2.containsKey(component.hashCode()) && !hasSucceeded(download)) {
+                    this.setFailed(component, i);
                 }
             }
-            if (n2 != n3) continue;
-            ++n;
+            if (finished) {
+                ++completed;
+            }
         }
-        this.f4 = n;
-        return n == this.f3;
+        this.f4 = completed;
+        return completed == this.f3;
+    }
+
+    private static boolean hasFinished(Future<Boolean> future, boolean timedOut) {
+        if (future == null || future.isDone()) {
+            return true;
+        }
+        if (timedOut) {
+            future.cancel(false);
+        }
+        return timedOut;
+    }
+
+    private static boolean hasSucceeded(Future<Boolean> future) {
+        if (future == null || !future.isDone()) {
+            return false;
+        }
+        try {
+            return Boolean.TRUE.equals(future.get());
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            return false;
+        } catch (ExecutionException | CancellationException exception) {
+            return false;
+        }
     }
 }
 
