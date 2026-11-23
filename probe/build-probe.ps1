@@ -1,9 +1,12 @@
 # Builds the verification probe mod: javac -> reobf (MC members to SRG) -> jar.
 param(
-    [string]$JavaHome = 'D:\deobf\_tools\jdk8\zulu8.78.0.19-ca-jdk8.0.412-win_x64'
+    [string]$JavaHome = $env:JAVA_HOME
 )
 $ErrorActionPreference = 'Stop'
-$root = 'D:\src\vexview1.8.9'
+$root = Split-Path -Parent $PSScriptRoot
+if (-not $JavaHome -or -not (Test-Path -LiteralPath (Join-Path $JavaHome 'bin\javac.exe') -PathType Leaf)) {
+    throw 'JDK 8 not found: set JAVA_HOME or pass -JavaHome <path-to-jdk8>'
+}
 $tools = Join-Path $root 'build-tools'
 $sdk = Join-Path $tools 'minecraft-1.8.9-forge-mcp.jar'
 $cpTxt = Join-Path $tools 'cp.txt'
@@ -33,5 +36,7 @@ Pop-Location
 Remove-Item (Join-Path $root 'probe\vexprobe.jar') -Force -ErrorAction SilentlyContinue
 & $jarEx cf (Join-Path $root 'probe\vexprobe.jar') -C $stage .
 if ($LASTEXITCODE -ne 0) { throw 'probe packaging failed' }
-Copy-Item (Join-Path $root 'probe\vexprobe.jar') (Join-Path $root 'runtest\mods') -Force
+$mods = Join-Path $root 'runtest\mods'
+New-Item -ItemType Directory -Force -Path $mods | Out-Null
+Copy-Item (Join-Path $root 'probe\vexprobe.jar') $mods -Force
 Write-Host "OK -> probe\vexprobe.jar"
