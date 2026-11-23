@@ -4,6 +4,7 @@
 package lk.vexview.hud;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -113,18 +114,12 @@ public class HUDViewer {
         }
     }
 
-    private static /* synthetic */ Map m7(Map<String, ? extends VexShow> map) {
-        LinkedHashMap linkedHashMap = new LinkedHashMap();
-        map.keySet().stream().sorted((string, string2) -> {
-            if (((VexShow)map.get((Object)string)).f6 > ((VexShow)map.get((Object)string2)).f6) {
-                return 1;
-            }
-            return -1;
-        }).forEach(string -> {
-            String string2 = string;
-            linkedHashMap.put(string2, map.get(string2));
-        });
-        return linkedHashMap;
+    private static <T extends VexShow> Map<String, T> m7(Map<String, T> map) {
+        Map<String, T> ordered = new LinkedHashMap<>();
+        map.entrySet().stream()
+            .sorted(Comparator.comparingInt(entry -> entry.getValue().f6))
+            .forEachOrdered(entry -> ordered.put(entry.getKey(), entry.getValue()));
+        return ordered;
     }
 
     public static int m8(VexShow vexShow, int n, int n2, int n3) {
