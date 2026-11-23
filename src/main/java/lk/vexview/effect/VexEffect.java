@@ -162,8 +162,8 @@ extends Lighting {
     @Override
     public boolean m1() {
         if (this.f3 == 0L) {
-            Minecraft.getMinecraft().getSoundHandler().playSound((ISound)PositionedSoundRecord.create(new ResourceLocation("entity.lightning_bolt.thunder"), 10000.0f));
-            Minecraft.getMinecraft().getSoundHandler().playSound((ISound)PositionedSoundRecord.create(new ResourceLocation("entity.lightning_bolt.impact"), 2.0f));
+            Minecraft.getMinecraft().getSoundHandler().playSound((ISound)PositionedSoundRecord.create(new ResourceLocation("ambient.weather.thunder"), 10000.0f));
+            Minecraft.getMinecraft().getSoundHandler().playSound((ISound)PositionedSoundRecord.create(new ResourceLocation("random.explode"), 2.0f));
             this.f3 = System.currentTimeMillis();
         } else if (System.currentTimeMillis() - this.f3 > 500L) {
             return true;
